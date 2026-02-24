@@ -1,0 +1,39 @@
+{
+  "name": "sentinel",
+  "version": "1.0.0",
+  "description": "Product integrity guardian — schema, contracts, chaos, visual, and flow testing across every platform",
+  "type": "module",
+  "bin": {
+    "sentinel": "./src/cli/index.ts"
+  },
+  "scripts": {
+    "sentinel": "tsx src/cli/index.ts",
+    "schema:generate": "tsx src/cli/index.ts schema:generate",
+    "schema:validate": "tsx src/cli/index.ts schema:validate",
+    "contracts": "tsx src/cli/index.ts contracts",
+    "chaos": "tsx src/cli/index.ts chaos",
+    "flows": "tsx src/cli/index.ts flows",
+    "visual": "tsx src/cli/index.ts visual",
+    "perf": "tsx src/cli/index.ts perf",
+    "brain": "tsx src/cli/index.ts brain",
+    "all": "tsx src/cli/index.ts all",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
+  },
+  "dependencies": {
+    "chalk": "^5.3.0",
+    "commander": "^12.0.0",
+    "glob": "^11.0.0",
+    "js-yaml": "^4.1.0",
+    "ajv": "^8.12.0"
+  },
+  "devDependencies": {
+    "@types/js-yaml": "^4.0.9",
+    "@types/node": "^20.11.5",
+    "tsx": "^4.7.0",
+    "typescript": "^5.7.0",
+    "vitest": "^2.1.0",
+    "@vitest/coverage-v8": "^2.1.0"
+  }
+}
