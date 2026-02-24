@@ -48,8 +48,9 @@ function derivePackage(outputPath: string): string {
 
 function hexToLong(hex: string): string {
   const clean = hex.replace('#', '')
+  // Compose Color format: 0xAARRGGBB (8 hex digits)
   const full = clean.length === 6 ? `FF${clean}` : clean
-  return `0xFF${full.toUpperCase()}`
+  return `0x${full.toUpperCase()}`
 }
 
 function generateColors(tokens: TokensSchema): string {

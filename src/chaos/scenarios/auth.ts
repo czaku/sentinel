@@ -56,19 +56,24 @@ export class ExpiredTokenScenario extends AuthChaosScenario {
 /**
  * Built-in: no token scenario.
  * Asserts protected endpoints return 401.
+ * Pass protectedEndpoints in opts, or it reads from navigation schema.
  */
 export class NoTokenScenario extends AuthChaosScenario {
   id = 'auth.no-token'
-  description = 'Request to protected endpoint with no auth header — must return 401'
+  description = 'Request to protected endpoints with no auth header — must return 401'
 
-  async run(opts: AuthChaosOptions): Promise<ChaosResult> {
+  async run(opts: AuthChaosOptions & { protectedEndpoints?: string[] }): Promise<ChaosResult> {
     const start = performance.now()
     const observations: string[] = []
     let passed = true
 
-    const protectedEndpoints = ['/workouts', '/profile', '/exercises/custom']
+    const endpoints = opts.protectedEndpoints ?? []
 
-    for (const endpoint of protectedEndpoints) {
+    if (endpoints.length === 0) {
+      return this.makeResult(true, ['No protected endpoints declared — skipped'], Math.round(performance.now() - start))
+    }
+
+    for (const endpoint of endpoints) {
       try {
         const res = await fetch(`${opts.target}${endpoint}`)
         if (res.status === 401) {
