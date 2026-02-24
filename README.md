@@ -9,12 +9,12 @@ Sentinel is a standalone tool used by any project that ships to multiple platfor
 | Layer | Command | What it checks |
 |-------|---------|----------------|
 | **Schema** | `sentinel schema:validate` | Feature completeness, platform drift, stale generated files |
-| **Generate** | `sentinel schema:generate` | Tokens → Swift/Kotlin/CSS, strings → Swift/XML/TS, flags → all platforms |
+| **Generate** | `sentinel schema:generate` | Tokens → Swift/Kotlin/CSS, strings → Swift/XML/TS, flags → all platforms, models → Swift structs/Kotlin data classes, navigation → AppRoute enums |
 | **Contracts** | `sentinel contracts` | API endpoints without consumers, views without API backing, feature matrix |
 | **Chaos** | `sentinel chaos` | Network failure, auth failure, data corruption, platform-specific edge cases |
 | **Flows** | `sentinel flows` | Maestro (native) + Playwright (web) E2E flows |
 | **Visual** | `sentinel visual` | Screenshot capture, regression diff, AI cross-platform parity |
-| **Perf** | `sentinel perf` | Startup time, render budgets |
+| **Perf** | `sentinel perf` | API response time budgets (p50/p95 vs declared maxMs) |
 | **Brain** | `sentinel brain` | AI analysis of all results → GitHub issues |
 
 ## Setup
@@ -41,9 +41,11 @@ myproject/
 │   │   ├── design/
 │   │   │   ├── tokens.json    ← design tokens (source of truth)
 │   │   │   └── strings.json   ← all copy (source of truth)
-│   │   └── platform/
-│   │       ├── navigation.json
-│   │       └── feature-flags.json
+│   │   ├── platform/
+│   │   │   ├── navigation.json       ← screens, tabs, deep links
+│   │   │   └── feature-flags.json   ← flag keys per platform
+│   │   └── models/            ← shared data model schemas
+│   │       └── workout.json
 │   ├── chaos/                 ← project-specific chaos scenarios
 │   ├── flows/
 │   │   ├── maestro/           ← native E2E flows (.yaml)
@@ -51,7 +53,7 @@ myproject/
 │   ├── visual/
 │   │   └── baselines/         ← screenshot baselines
 │   └── perf/
-│       └── budgets.yaml
+│       └── budgets.yaml       ← p50/p95 response time budgets per endpoint
 └── docs/                      ← human documentation only
 ```
 
@@ -117,7 +119,43 @@ Each feature in `sentinel/schemas/features/` declares what it promises across ev
 
 Sentinel validates: every declared screen exists, every endpoint has a consumer, no platform is left behind.
 
+## Model Schema
+
+Shared data models in `sentinel/schemas/models/` generate Swift structs and Kotlin data classes from a single definition:
+
+```json
+{
+  "$sentinel": "1.0",
+  "type": "model",
+  "id": "workout",
+  "name": "Workout",
+  "platforms": ["apple", "google"],
+  "fields": [
+    { "name": "id",         "type": "UUID",    "optional": false },
+    { "name": "name",       "type": "String",  "optional": false },
+    { "name": "startedAt",  "type": "Date",    "optional": false },
+    { "name": "durationMs", "type": "Int",     "optional": true  }
+  ]
+}
+```
+
+Generates:
+- `struct Workout: Codable, Identifiable` (Swift)
+- `@Serializable data class Workout(...)` (Kotlin)
+
+Enums are supported via `"isEnum": true` with `"enumValues": [{ "name": "active", "rawValue": "active" }]`.
+
 ## Chaos Scenarios
+
+Sentinel ships built-in scenario categories — no setup required:
+
+| Category | Scenarios |
+|----------|-----------|
+| **auth** | No token → 401, expired token → 401, wrong role → 403 |
+| **network** | Offline mode, slow 3G simulation, concurrent requests |
+| **data** | Corrupt JSON → 400, empty collection → `[]`, large payload → 413 |
+| **payment** | Card declined → 402/403, subscription expired, webhook shape |
+| **platform** | Low storage, background kill recovery, clock skew |
 
 Write project-specific chaos scenarios in `sentinel/chaos/`:
 
@@ -140,19 +178,13 @@ export default class WorkoutOfflineScenario extends NetworkChaosScenario {
 
 ## CI Integration
 
-```yaml
-# .github/workflows/sentinel.yml
-- name: Validate schemas
-  run: npx sentinel schema:validate
+A ready-to-use GitHub Actions workflow template is at [`templates/sentinel-ci.yml`](./templates/sentinel-ci.yml). Copy it into your project:
 
-- name: Check contracts
-  run: npx sentinel contracts
-
-- name: Chaos tests (staging)
-  run: npx sentinel chaos
-  env:
-    SENTINEL_API_TARGET: https://staging.api.myproject.com
+```bash
+cp node_modules/sentinel/templates/sentinel-ci.yml .github/workflows/sentinel.yml
 ```
+
+The template runs schema validation, contract checks, and chaos tests on every push, with optional perf and visual checks on staging. It posts results to the GitHub Actions step summary and can create GitHub issues for failures when `ANTHROPIC_API_KEY` and `SENTINEL_GITHUB_TOKEN` are configured.
 
 ## Adopters
 
