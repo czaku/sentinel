@@ -129,8 +129,10 @@ async function compareImages(
 ): Promise<CompareResult> {
   // Try pixel-level diff with pixelmatch if available
   try {
-    const pixelmatch = await import('pixelmatch').then(m => m.default).catch(() => null)
-    const pngjs = await import('pngjs').then(m => m.PNG).catch(() => null)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const pixelmatch = await import('pixelmatch' as any).then((m: any) => m.default).catch(() => null)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const pngjs = await import('pngjs' as any).then((m: any) => m.PNG).catch(() => null)
 
     if (pixelmatch && pngjs) {
       const baseline = pngjs.sync.read(fs.readFileSync(baselinePath))

@@ -183,7 +183,7 @@ Focus on: layout, information hierarchy, interactive elements, colours, typograp
       const text = response.content[0].type === 'text' ? response.content[0].text : ''
       const jsonMatch = text.match(/\{[\s\S]*\}/)
       if (jsonMatch) {
-        const parsed = JSON.parse(jsonMatch[0]) as ParityAssessment
+        const parsed = JSON.parse(jsonMatch[0]) as Omit<ParityAssessment, 'name'>
         assessments.push({ name: pair.name, ...parsed })
       } else {
         assessments.push({ name: pair.name, parityScore: 5, issues: [], summary: 'Could not parse AI response' })

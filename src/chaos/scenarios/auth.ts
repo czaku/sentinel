@@ -1,14 +1,9 @@
-import type { ChaosResult } from '../types.js'
+import type { ChaosResult, ChaosScenario } from '../types.js'
 
-export interface AuthChaosOptions {
-  target: string
-  validToken?: string
-}
-
-export abstract class AuthChaosScenario {
+export abstract class AuthChaosScenario implements ChaosScenario {
   abstract id: string
   abstract description: string
-  abstract run(opts: AuthChaosOptions): Promise<ChaosResult>
+  abstract run(opts: Record<string, unknown>): Promise<ChaosResult>
 
   protected makeResult(
     passed: boolean,
@@ -21,20 +16,21 @@ export abstract class AuthChaosScenario {
 
 /**
  * Built-in: expired token scenario.
- * Fires a request with a known-expired JWT and asserts the client handles 401 gracefully.
+ * Fires a request with a known-expired JWT and asserts the API returns 401.
  */
 export class ExpiredTokenScenario extends AuthChaosScenario {
   id = 'auth.token-expired'
-  description = 'Request with expired JWT — client must refresh silently without user interruption'
+  description = 'Request with expired JWT — API must return 401'
 
-  async run(opts: AuthChaosOptions): Promise<ChaosResult> {
+  async run(opts: Record<string, unknown>): Promise<ChaosResult> {
+    const target = opts.target as string
     const start = performance.now()
     const observations: string[] = []
     let passed = true
 
     try {
       const expiredToken = 'eyJhbGciOiJIUzI1NiJ9.eyJleHAiOjB9.invalid'
-      const res = await fetch(`${opts.target}/auth/me`, {
+      const res = await fetch(`${target}/auth/me`, {
         headers: { Authorization: `Bearer ${expiredToken}` }
       })
 
@@ -55,19 +51,20 @@ export class ExpiredTokenScenario extends AuthChaosScenario {
 
 /**
  * Built-in: no token scenario.
- * Asserts protected endpoints return 401.
- * Pass protectedEndpoints in opts, or it reads from navigation schema.
+ * Asserts protected endpoints return 401 when called without auth.
+ * Pass protectedEndpoints in opts, or skip gracefully when none declared.
  */
 export class NoTokenScenario extends AuthChaosScenario {
   id = 'auth.no-token'
   description = 'Request to protected endpoints with no auth header — must return 401'
 
-  async run(opts: AuthChaosOptions & { protectedEndpoints?: string[] }): Promise<ChaosResult> {
+  async run(opts: Record<string, unknown>): Promise<ChaosResult> {
+    const target = opts.target as string
     const start = performance.now()
     const observations: string[] = []
     let passed = true
 
-    const endpoints = opts.protectedEndpoints ?? []
+    const endpoints = (opts.protectedEndpoints as string[] | undefined) ?? []
 
     if (endpoints.length === 0) {
       return this.makeResult(true, ['No protected endpoints declared — skipped'], Math.round(performance.now() - start))
@@ -75,7 +72,7 @@ export class NoTokenScenario extends AuthChaosScenario {
 
     for (const endpoint of endpoints) {
       try {
-        const res = await fetch(`${opts.target}${endpoint}`)
+        const res = await fetch(`${target}${endpoint}`)
         if (res.status === 401) {
           observations.push(`✓ ${endpoint} → 401`)
         } else {
