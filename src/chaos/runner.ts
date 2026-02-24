@@ -8,8 +8,10 @@ import path from 'path'
 import { glob } from 'glob'
 import chalk from 'chalk'
 import type { ResolvedConfig, ValidationResult } from '../config/types.js'
-import type { ChaosResult } from './scenarios/network.js'
+import type { ChaosResult, ChaosScenario } from './types.js'
 import { ExpiredTokenScenario, NoTokenScenario } from './scenarios/auth.js'
+import { CorruptJsonScenario, EmptyCollectionScenario, LargePayloadScenario } from './scenarios/data.js'
+import { CardDeclinedScenario, SubscriptionExpiredScenario } from './scenarios/payment.js'
 import { log } from '../utils/logger.js'
 
 export async function runChaos(config: ResolvedConfig, filter?: string): Promise<ValidationResult> {
@@ -20,13 +22,18 @@ export async function runChaos(config: ResolvedConfig, filter?: string): Promise
   const apiTarget = config.chaos?.targets?.api ?? 'http://localhost:3000'
 
   // ─── Built-in scenarios ─────────────────────────────────────────────────────
-  const builtIn = [
+  const builtIn: ChaosScenario[] = [
     new ExpiredTokenScenario(),
     new NoTokenScenario(),
+    new CorruptJsonScenario(),
+    new EmptyCollectionScenario(),
+    new LargePayloadScenario(),
+    new CardDeclinedScenario(),
+    new SubscriptionExpiredScenario(),
   ]
 
   // ─── Project scenarios (from sentinel/chaos/*.ts) ───────────────────────────
-  const projectScenarios: Array<{ id: string; description: string; run: (opts: any) => Promise<ChaosResult> }> = []
+  const projectScenarios: ChaosScenario[] = []
 
   if (fs.existsSync(chaosDir)) {
     const files = await glob('**/*.ts', { cwd: chaosDir, absolute: true })
@@ -35,7 +42,7 @@ export async function runChaos(config: ResolvedConfig, filter?: string): Promise
         const mod = await import(file)
         const ScenarioClass = mod.default
         if (ScenarioClass && typeof ScenarioClass === 'function') {
-          projectScenarios.push(new ScenarioClass())
+          projectScenarios.push(new ScenarioClass() as ChaosScenario)
         }
       } catch (err) {
         log.warn(`Could not load chaos scenario: ${file} — ${String(err)}`)
@@ -64,7 +71,17 @@ export async function runChaos(config: ResolvedConfig, filter?: string): Promise
 
   for (const scenario of toRun) {
     process.stdout.write(`  ${chalk.dim('→')} ${scenario.description} ... `)
-    const result = await scenario.run({ target: apiTarget })
+    let result: ChaosResult
+    try {
+      result = await scenario.run({ target: apiTarget })
+    } catch (err) {
+      result = {
+        scenario: scenario.id,
+        passed: false,
+        observations: [`Scenario threw uncaught exception: ${String(err)}`],
+        durationMs: 0,
+      }
+    }
     results.push(result)
 
     if (result.passed) {

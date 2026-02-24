@@ -1,6 +1,6 @@
 import path from 'path'
 import type { FeatureFlagsSchema, ResolvedConfig } from '../../../config/types.js'
-import { readJSON, writeFile, generatedHeader } from '../../../utils/file.js'
+import { readJSON, writeFile, generatedHeader, hashFile } from '../../../utils/file.js'
 import { log } from '../../../utils/logger.js'
 
 export function generateWebFlags(config: ResolvedConfig): void {
@@ -17,7 +17,7 @@ export function generateWebFlags(config: ResolvedConfig): void {
   const defaults = Object.fromEntries(webFlags.map(f => [toCamel(f.key), f.defaultEnabled]))
 
   const output = [
-    generatedHeader('sentinel/generators/web/flags', 'sentinel/schemas/platform/feature-flags.json'),
+    generatedHeader('sentinel/generators/web/flags', 'sentinel/schemas/platform/feature-flags.json', hashFile(flagsPath)),
     `type FlagKey = ${webFlags.map(f => `'${toCamel(f.key)}'`).join(' | ')}`,
     ``,
     `const defaults: Record<FlagKey, boolean> = ${JSON.stringify(defaults, null, 2)} as const`,

@@ -68,7 +68,8 @@ export async function initProject(projectName: string): Promise<void> {
   log.info('  2. Fill in sentinel/schemas/design/tokens.json with your design tokens')
   log.info('  3. Fill in sentinel/schemas/design/strings.json with your copy')
   log.info('  4. Add feature schemas to sentinel/schemas/features/')
-  log.info('  5. Run "sentinel schema:generate" to generate platform files')
+  log.info('  5. Add model schemas to sentinel/schemas/models/')
+  log.info('  6. Run "sentinel schema:generate" to generate platform files')
   log.blank()
 }
 
@@ -78,6 +79,7 @@ function scaffoldExampleSchemas(sentinelDir: string, projectName: string): void 
   const flagsPath = path.join(sentinelDir, 'schemas', 'platform', 'feature-flags.json')
   const navPath = path.join(sentinelDir, 'schemas', 'platform', 'navigation.json')
   const exampleFeaturePath = path.join(sentinelDir, 'schemas', 'features', '_example.json')
+  const exampleModelPath = path.join(sentinelDir, 'schemas', 'models', '_example-status.json')
 
   if (!fs.existsSync(tokensPath)) {
     fs.writeFileSync(tokensPath, JSON.stringify({
@@ -184,6 +186,24 @@ function scaffoldExampleSchemas(sentinelDir: string, projectName: string): void 
       routes: [],
     }, null, 2))
     log.success('Created sentinel/schemas/platform/navigation.json (example)')
+  }
+
+  if (!fs.existsSync(exampleModelPath)) {
+    fs.writeFileSync(exampleModelPath, JSON.stringify({
+      $sentinel: '1.0',
+      type: 'model',
+      id: 'example-status',
+      name: 'ExampleStatus',
+      description: 'Example enum model — replace with your own',
+      isEnum: true,
+      platforms: ['api', 'apple', 'google'],
+      enumValues: [
+        { name: 'active', rawValue: 'active' },
+        { name: 'completed', rawValue: 'completed' },
+        { name: 'archived', rawValue: 'archived' },
+      ],
+    }, null, 2))
+    log.success('Created sentinel/schemas/models/_example-status.json (example)')
   }
 
   if (!fs.existsSync(exampleFeaturePath)) {

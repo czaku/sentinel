@@ -1,6 +1,6 @@
 import path from 'path'
 import type { FeatureFlagsSchema, ResolvedConfig } from '../../../config/types.js'
-import { readJSON, writeFile, generatedHeader } from '../../../utils/file.js'
+import { readJSON, writeFile, generatedHeader, hashFile } from '../../../utils/file.js'
 import { log } from '../../../utils/logger.js'
 
 export function generateGoogleFlags(config: ResolvedConfig): void {
@@ -14,7 +14,7 @@ export function generateGoogleFlags(config: ResolvedConfig): void {
   const pkg = derivePackage(platform.output.flags)
 
   const output = [
-    generatedHeader('sentinel/generators/google/flags', 'sentinel/schemas/platform/feature-flags.json'),
+    generatedHeader('sentinel/generators/google/flags', 'sentinel/schemas/platform/feature-flags.json', hashFile(flagsPath)),
     `package ${pkg}`,
     ``,
     `@Suppress("MemberVisibilityCanBePrivate", "unused")`,

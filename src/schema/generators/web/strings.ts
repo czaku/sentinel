@@ -1,6 +1,6 @@
 import path from 'path'
 import type { StringsSchema, ResolvedConfig } from '../../../config/types.js'
-import { readJSON, writeFile, generatedHeader } from '../../../utils/file.js'
+import { readJSON, writeFile, generatedHeader, hashFile } from '../../../utils/file.js'
 import { log } from '../../../utils/logger.js'
 
 export function generateWebStrings(config: ResolvedConfig): void {
@@ -13,7 +13,7 @@ export function generateWebStrings(config: ResolvedConfig): void {
   const nested = buildNestedObject(schema.strings)
 
   const output = [
-    generatedHeader('sentinel/generators/web/strings', 'sentinel/schemas/design/strings.json'),
+    generatedHeader('sentinel/generators/web/strings', 'sentinel/schemas/design/strings.json', hashFile(stringsPath)),
     `// Supports multiple locales — add locale keys to strings.json`,
     ``,
     `export const strings = ${JSON.stringify(nested, null, 2)} as const`,

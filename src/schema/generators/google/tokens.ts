@@ -1,6 +1,6 @@
 import path from 'path'
 import type { TokensSchema, ResolvedConfig } from '../../../config/types.js'
-import { readJSON, writeFile, generatedHeader, parseDimension } from '../../../utils/file.js'
+import { readJSON, writeFile, generatedHeader, parseDimension, hashFile } from '../../../utils/file.js'
 import { log } from '../../../utils/logger.js'
 
 export function generateGoogleTokens(config: ResolvedConfig): void {
@@ -14,7 +14,7 @@ export function generateGoogleTokens(config: ResolvedConfig): void {
   const name = projectName(config)
 
   const output = [
-    generatedHeader('sentinel/generators/google/tokens', 'sentinel/schemas/design/tokens.json'),
+    generatedHeader('sentinel/generators/google/tokens', 'sentinel/schemas/design/tokens.json', hashFile(tokensPath)),
     `package ${pkg}`,
     ``,
     `import androidx.compose.ui.graphics.Color`,

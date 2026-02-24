@@ -1,0 +1,125 @@
+##
+## Sentinel CI — copy this file to your project at .github/workflows/sentinel.yml
+## Adjust the 'on' triggers, install steps, and API_TARGET to suit your project.
+##
+## Required secrets (add in repo Settings > Secrets and variables > Actions):
+##   ANTHROPIC_API_KEY  — for brain layer analysis (optional but recommended)
+##   GITHUB_TOKEN       — automatically available in Actions (used for issue creation)
+##
+
+name: Sentinel
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'sentinel/**'
+      - 'sentinel.yaml'
+      - '*.swift'
+      - '*.kt'
+      - '**/*.ts'
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: '0 6 * * 1-5'   # Weekdays at 6am UTC — nightly contract checks
+  workflow_dispatch:
+    inputs:
+      create_issues:
+        description: 'Create GitHub issues for failures'
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  issues: write       # Required for brain:issues feature
+
+jobs:
+  sentinel:
+    name: Sentinel CI
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # ─── Install runtimes ─────────────────────────────────────────────────
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      # Install Sentinel (if used as a local dep) or reference the dev sentinel
+      - name: Install dependencies
+        run: npm ci
+
+      # ─── Schema checks ────────────────────────────────────────────────────
+
+      - name: Generate platform files
+        run: npx sentinel schema:generate
+        # This verifies generators run without errors.
+        # The output files should already be committed; this re-generates them.
+
+      - name: Check for schema drift
+        run: |
+          if ! git diff --quiet; then
+            echo "❌ Generated files are out of sync with schemas."
+            echo "Run 'sentinel schema:generate' locally and commit the changes."
+            git diff --stat
+            exit 1
+          fi
+
+      - name: Validate schemas
+        run: npx sentinel schema:validate
+
+      # ─── Contracts ────────────────────────────────────────────────────────
+
+      - name: Contract analysis
+        run: npx sentinel contracts
+
+      # ─── Chaos ────────────────────────────────────────────────────────────
+
+      - name: Chaos testing
+        run: npx sentinel chaos
+        env:
+          # Point to your running API (spin it up in a service container if needed)
+          # For offline checks, the chaos runner skips network scenarios gracefully
+          SENTINEL_API_TARGET: ${{ vars.SENTINEL_API_TARGET || 'http://localhost:3000' }}
+        continue-on-error: true   # Don't block PRs if API isn't up in CI
+
+      # ─── Performance budgets ───────────────────────────────────────────────
+
+      - name: Performance budgets
+        if: github.ref == 'refs/heads/main'  # Only on main — needs a live API
+        run: npx sentinel perf
+        env:
+          SENTINEL_PERF_TOKEN: ${{ secrets.SENTINEL_PERF_TOKEN }}
+        continue-on-error: true
+
+      # ─── Report ───────────────────────────────────────────────────────────
+
+      - name: Generate report
+        if: always()
+        run: npx sentinel report --output sentinel-report.md
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        # Writes to GITHUB_STEP_SUMMARY automatically when in Actions
+
+      - name: Upload report artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sentinel-report
+          path: sentinel-report.md
+          retention-days: 30
+
+      # ─── Brain: Create GitHub issues ──────────────────────────────────────
+
+      - name: Create issues for failures
+        if: failure() && (github.ref == 'refs/heads/main' || github.event.inputs.create_issues == 'true')
+        run: npx sentinel brain --create-issues
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

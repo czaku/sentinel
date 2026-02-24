@@ -1,6 +1,6 @@
 import path from 'path'
 import type { StringsSchema, ResolvedConfig } from '../../../config/types.js'
-import { readJSON, writeFile, generatedHeader } from '../../../utils/file.js'
+import { readJSON, writeFile, generatedHeader, hashFile } from '../../../utils/file.js'
 import { log } from '../../../utils/logger.js'
 
 export function generateAppleStrings(config: ResolvedConfig): void {
@@ -11,7 +11,7 @@ export function generateAppleStrings(config: ResolvedConfig): void {
   const schema = readJSON<StringsSchema>(stringsPath)
 
   const output = [
-    generatedHeader('sentinel/generators/apple/strings', 'sentinel/schemas/design/strings.json'),
+    generatedHeader('sentinel/generators/apple/strings', 'sentinel/schemas/design/strings.json', hashFile(stringsPath)),
     `import Foundation`,
     ``,
     `// swiftlint:disable all`,

@@ -47,6 +47,7 @@ export function loadConfig(configPath?: string): ResolvedConfig {
     featuresDir: path.join(schemasDir, 'features'),
     designDir: path.join(schemasDir, 'design'),
     platformDir: path.join(schemasDir, 'platform'),
+    modelsDir: path.join(schemasDir, 'models'),
   }
 }
 
@@ -77,6 +78,7 @@ export function getSentinelPaths(sentinelDir: string) {
     features:     path.join(sentinelDir, 'schemas', 'features'),
     design:       path.join(sentinelDir, 'schemas', 'design'),
     platform:     path.join(sentinelDir, 'schemas', 'platform'),
+    models:       path.join(sentinelDir, 'schemas', 'models'),
     chaos:        path.join(sentinelDir, 'chaos'),
     flows: {
       root:       path.join(sentinelDir, 'flows'),
@@ -98,6 +100,7 @@ export function ensureSentinelDir(sentinelDir: string): void {
     paths.features,
     paths.design,
     paths.platform,
+    paths.models,
     paths.chaos,
     paths.flows.root,
     paths.flows.maestro,

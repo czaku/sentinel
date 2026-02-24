@@ -1,6 +1,6 @@
 import path from 'path'
 import type { StringsSchema, ResolvedConfig } from '../../../config/types.js'
-import { readJSON, writeFile, xmlGeneratedHeader, toAndroidKey } from '../../../utils/file.js'
+import { readJSON, writeFile, xmlGeneratedHeader, toAndroidKey, hashFile } from '../../../utils/file.js'
 import { log } from '../../../utils/logger.js'
 
 export function generateGoogleStrings(config: ResolvedConfig): void {
@@ -26,7 +26,7 @@ export function generateGoogleStrings(config: ResolvedConfig): void {
   })
 
   const output = [
-    xmlGeneratedHeader('sentinel/schemas/design/strings.json'),
+    xmlGeneratedHeader('sentinel/schemas/design/strings.json', hashFile(stringsPath)),
     `<resources>`,
     ...entries,
     `</resources>`,

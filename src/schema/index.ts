@@ -2,9 +2,13 @@ import type { ResolvedConfig, ValidationResult } from '../config/types.js'
 import { generateAppleTokens } from './generators/apple/tokens.js'
 import { generateAppleStrings } from './generators/apple/strings.js'
 import { generateAppleFlags } from './generators/apple/flags.js'
+import { generateAppleModels } from './generators/apple/models.js'
+import { generateAppleNavigation } from './generators/apple/navigation.js'
 import { generateGoogleTokens } from './generators/google/tokens.js'
 import { generateGoogleStrings } from './generators/google/strings.js'
 import { generateGoogleFlags } from './generators/google/flags.js'
+import { generateGoogleModels } from './generators/google/models.js'
+import { generateGoogleNavigation } from './generators/google/navigation.js'
 import { generateWebTokens } from './generators/web/tokens.js'
 import { generateWebStrings } from './generators/web/strings.js'
 import { generateWebFlags } from './generators/web/flags.js'
@@ -21,12 +25,16 @@ export async function generateAll(config: ResolvedConfig): Promise<void> {
     generateAppleTokens(config)
     generateAppleStrings(config)
     generateAppleFlags(config)
+    generateAppleModels(config)
+    generateAppleNavigation(config)
   }
 
   if (config.platforms.google) {
     generateGoogleTokens(config)
     generateGoogleStrings(config)
     generateGoogleFlags(config)
+    generateGoogleModels(config)
+    generateGoogleNavigation(config)
   }
 
   if (config.platforms.web || config.platforms['web-admin']) {

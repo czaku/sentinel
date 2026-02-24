@@ -1,11 +1,12 @@
 /**
  * Staleness Checker
- * Verifies generated files are up to date with their source schemas.
- * Compares the generated header timestamp against schema file mtime.
+ * Verifies generated files are up-to-date with their source schemas.
+ * Uses embedded SHA-256 content hashes (not mtime) so CI fresh-checkout is safe.
  */
 import fs from 'fs'
 import path from 'path'
 import type { ResolvedConfig, ValidationResult, ValidationIssue } from '../../config/types.js'
+import { hashFile, readEmbeddedHash } from '../../utils/file.js'
 
 interface OutputCheck {
   label: string
@@ -60,16 +61,33 @@ export function checkStaleness(config: ResolvedConfig): ValidationResult {
 
     if (!fs.existsSync(check.schema)) continue // schema missing handled by completeness checker
 
-    const schemaMtime = fs.statSync(check.schema).mtimeMs
-    const outputMtime = fs.statSync(check.output).mtimeMs
+    const embeddedHash = readEmbeddedHash(check.output)
 
-    if (schemaMtime > outputMtime) {
+    if (!embeddedHash) {
+      // Generated file has no hash — fall back to mtime comparison
+      const schemaMtime = fs.statSync(check.schema).mtimeMs
+      const outputMtime = fs.statSync(check.output).mtimeMs
+      if (schemaMtime > outputMtime) {
+        issues.push({
+          severity: 'warning',
+          layer: 'schema',
+          rule: 'staleness',
+          file: check.output,
+          message: `Possibly stale: ${check.label} — no hash embedded, regenerate to enable CI-safe staleness detection`,
+          fix: `sentinel schema:generate`,
+        })
+      }
+      continue
+    }
+
+    const currentHash = hashFile(check.schema)
+    if (embeddedHash !== currentHash) {
       issues.push({
         severity: 'error',
         layer: 'schema',
         rule: 'staleness',
         file: check.output,
-        message: `Stale generated file: ${check.label} — schema updated after last generate`,
+        message: `Stale generated file: ${check.label} — schema changed since last generate`,
         fix: `sentinel schema:generate`,
       })
     }

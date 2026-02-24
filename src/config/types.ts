@@ -71,6 +71,12 @@ export interface NotificationsConfig {
 
 // ─── Root Config ──────────────────────────────────────────────────────────────
 
+export interface GitHubConfig {
+  owner: string
+  repo: string
+  token?: string              // defaults to GITHUB_TOKEN env var
+}
+
 export interface SentinelConfig {
   sentinel: SentinelVersion
   project: string
@@ -92,6 +98,7 @@ export interface SentinelConfig {
 
   chaos?: ChaosConfig
   notifications?: NotificationsConfig
+  github?: GitHubConfig
 }
 
 // ─── Resolved Config (post-load, all paths absolute) ─────────────────────────
@@ -103,6 +110,7 @@ export interface ResolvedConfig extends SentinelConfig {
   featuresDir: string       // schemasDir/features/
   designDir: string         // schemasDir/design/
   platformDir: string       // schemasDir/platform/
+  modelsDir: string         // schemasDir/models/
 }
 
 // ─── Internal Schema Types ────────────────────────────────────────────────────
@@ -198,6 +206,35 @@ export interface NavigationModal {
   id: string
   presentation: 'sheet' | 'fullScreen' | 'overlay' | 'popover'
   platforms: Partial<Record<PlatformKey, { file: string }>>
+}
+
+// ─── Model Schema Types ───────────────────────────────────────────────────────
+
+export interface ModelFieldSchema {
+  name: string
+  type: string               // "String" | "Int" | "Double" | "Bool" | "Date" | "UUID" | "URL" | another model id
+  optional?: boolean
+  isArray?: boolean
+  default?: string | number | boolean
+  description?: string
+}
+
+export interface EnumValueSchema {
+  name: string               // camelCase variant name
+  rawValue: string           // string sent over the wire
+  description?: string
+}
+
+export interface ModelSchema {
+  $sentinel: SentinelVersion
+  type: 'model'
+  id: string
+  name: string               // PascalCase struct/class name
+  description?: string
+  isEnum?: boolean
+  platforms: PlatformKey[]
+  fields?: ModelFieldSchema[]
+  enumValues?: EnumValueSchema[]
 }
 
 // ─── Validation Result Types ──────────────────────────────────────────────────

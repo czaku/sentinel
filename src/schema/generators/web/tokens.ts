@@ -1,6 +1,6 @@
 import path from 'path'
 import type { TokensSchema, ResolvedConfig } from '../../../config/types.js'
-import { readJSON, writeFile, generatedHeader, parseDimension } from '../../../utils/file.js'
+import { readJSON, writeFile, generatedHeader, parseDimension, hashFile } from '../../../utils/file.js'
 import { log } from '../../../utils/logger.js'
 
 export function generateWebTokens(config: ResolvedConfig): void {
@@ -11,7 +11,7 @@ export function generateWebTokens(config: ResolvedConfig): void {
   const tokens = readJSON<TokensSchema>(tokensPath)
 
   const output = [
-    generatedHeader('sentinel/generators/web/tokens', 'sentinel/schemas/design/tokens.json'),
+    generatedHeader('sentinel/generators/web/tokens', 'sentinel/schemas/design/tokens.json', hashFile(tokensPath)),
     generateCSSVariables(tokens),
     ``,
     generateTSExport(tokens),

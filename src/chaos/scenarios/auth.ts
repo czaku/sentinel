@@ -1,4 +1,4 @@
-import type { ChaosResult } from './network.js'
+import type { ChaosResult } from '../types.js'
 
 export interface AuthChaosOptions {
   target: string

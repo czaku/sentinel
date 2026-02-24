@@ -1,6 +1,6 @@
 import path from 'path'
 import type { FeatureFlagsSchema, ResolvedConfig } from '../../../config/types.js'
-import { readJSON, writeFile, generatedHeader } from '../../../utils/file.js'
+import { readJSON, writeFile, generatedHeader, hashFile } from '../../../utils/file.js'
 import { log } from '../../../utils/logger.js'
 
 export function generateAppleFlags(config: ResolvedConfig): void {
@@ -13,7 +13,7 @@ export function generateAppleFlags(config: ResolvedConfig): void {
   const appleFlags = schema.flags.filter(f => f.platforms.includes('apple'))
 
   const output = [
-    generatedHeader('sentinel/generators/apple/flags', 'sentinel/schemas/platform/feature-flags.json'),
+    generatedHeader('sentinel/generators/apple/flags', 'sentinel/schemas/platform/feature-flags.json', hashFile(flagsPath)),
     `import Foundation`,
     ``,
     `// swiftlint:disable all`,

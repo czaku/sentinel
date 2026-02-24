@@ -2,25 +2,15 @@
  * Network chaos primitives.
  * Projects extend these to write their own scenarios.
  */
+import type { ChaosResult, ChaosScenario } from '../types.js'
+
+export type { ChaosResult, ChaosScenario }  // re-export for backwards compat
 
 export interface NetworkChaosOptions {
   /** API base URL to target */
   target: string
   /** Duration in ms to sustain the chaos condition */
   durationMs?: number
-}
-
-export interface ChaosScenario {
-  id: string
-  description: string
-  run(opts: NetworkChaosOptions): Promise<ChaosResult>
-}
-
-export interface ChaosResult {
-  scenario: string
-  passed: boolean
-  observations: string[]
-  durationMs: number
 }
 
 /**
@@ -46,7 +36,7 @@ export interface ChaosResult {
 export abstract class NetworkChaosScenario implements ChaosScenario {
   abstract id: string
   abstract description: string
-  abstract run(opts: NetworkChaosOptions): Promise<ChaosResult>
+  abstract run(opts: Record<string, unknown>): Promise<ChaosResult>
 
   protected async simulateOffline(
     opts: NetworkChaosOptions,
