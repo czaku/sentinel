@@ -4,19 +4,21 @@
   "description": "Product integrity guardian — schema, contracts, chaos, visual, and flow testing across every platform",
   "type": "module",
   "bin": {
-    "sentinel": "./src/cli/index.ts"
+    "sentinel": "./bin/sentinel.js"
   },
   "scripts": {
     "sentinel": "tsx src/cli/index.ts",
     "schema:generate": "tsx src/cli/index.ts schema:generate",
     "schema:validate": "tsx src/cli/index.ts schema:validate",
     "contracts": "tsx src/cli/index.ts contracts",
+    "contracts:matrix": "tsx src/cli/index.ts contracts:matrix",
     "chaos": "tsx src/cli/index.ts chaos",
     "flows": "tsx src/cli/index.ts flows",
     "visual": "tsx src/cli/index.ts visual",
     "perf": "tsx src/cli/index.ts perf",
     "brain": "tsx src/cli/index.ts brain",
     "all": "tsx src/cli/index.ts all",
+    "build": "tsc",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage"
