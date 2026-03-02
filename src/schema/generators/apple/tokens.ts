@@ -10,12 +10,14 @@ export function generateAppleTokens(config: ResolvedConfig): void {
   const tokensPath = path.join(config.designDir, 'tokens.json')
   const tokens = readJSON<TokensSchema>(tokensPath)
 
+  const enumName = outputFileName(platform.output.tokens)
+
   const output = [
     generatedHeader('sentinel/generators/apple/tokens', 'sentinel/schemas/design/tokens.json', hashFile(tokensPath)),
     `import SwiftUI`,
     ``,
     `// swiftlint:disable all`,
-    `public enum ${projectName(config)}Tokens {`,
+    `public enum ${enumName} {`,
     generateColors(tokens),
     generateTypography(tokens),
     generateSpacing(tokens),
@@ -29,8 +31,9 @@ export function generateAppleTokens(config: ResolvedConfig): void {
   log.success(`Apple tokens → ${platform.output.tokens}`)
 }
 
-function projectName(config: ResolvedConfig): string {
-  return config.project.charAt(0).toUpperCase() + config.project.slice(1)
+/** Derives a PascalCase type name from the output file path, e.g. GeneratedTokens.swift → GeneratedTokens */
+function outputFileName(filePath: string): string {
+  return path.basename(filePath, path.extname(filePath))
 }
 
 function generateColors(tokens: TokensSchema): string {

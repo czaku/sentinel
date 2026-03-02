@@ -12,13 +12,14 @@ export function generateGoogleFlags(config: ResolvedConfig): void {
 
   const googleFlags = schema.flags.filter(f => f.platforms.includes('google'))
   const pkg = derivePackage(platform.output.flags)
+  const objectName = path.basename(platform.output.flags, path.extname(platform.output.flags))
 
   const output = [
     generatedHeader('sentinel/generators/google/flags', 'sentinel/schemas/platform/feature-flags.json', hashFile(flagsPath)),
     `package ${pkg}`,
     ``,
     `@Suppress("MemberVisibilityCanBePrivate", "unused")`,
-    `object FeatureFlags {`,
+    `object ${objectName} {`,
     ``,
     `    // Remote override map — set from API response or debug menu`,
     `    private val overrides = mutableMapOf<String, Boolean>()`,

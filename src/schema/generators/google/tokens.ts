@@ -11,7 +11,7 @@ export function generateGoogleTokens(config: ResolvedConfig): void {
   const tokens = readJSON<TokensSchema>(tokensPath)
 
   const pkg = derivePackage(platform.output.tokens)
-  const name = projectName(config)
+  const objectName = path.basename(platform.output.tokens, path.extname(platform.output.tokens))
 
   const output = [
     generatedHeader('sentinel/generators/google/tokens', 'sentinel/schemas/design/tokens.json', hashFile(tokensPath)),
@@ -22,7 +22,7 @@ export function generateGoogleTokens(config: ResolvedConfig): void {
     `import androidx.compose.ui.unit.sp`,
     ``,
     `@Suppress("MemberVisibilityCanBePrivate", "unused")`,
-    `object ${name}Tokens {`,
+    `object ${objectName} {`,
     generateColors(tokens),
     generateTypography(tokens),
     generateSpacing(tokens),
@@ -33,10 +33,6 @@ export function generateGoogleTokens(config: ResolvedConfig): void {
 
   writeFile(platform.output.tokens, output)
   log.success(`Google tokens → ${platform.output.tokens}`)
-}
-
-function projectName(config: ResolvedConfig): string {
-  return config.project.charAt(0).toUpperCase() + config.project.slice(1)
 }
 
 function derivePackage(outputPath: string): string {

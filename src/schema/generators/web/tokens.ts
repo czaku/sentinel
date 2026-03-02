@@ -10,14 +10,21 @@ export function generateWebTokens(config: ResolvedConfig): void {
   const tokensPath = path.join(config.designDir, 'tokens.json')
   const tokens = readJSON<TokensSchema>(tokensPath)
 
-  const output = [
-    generatedHeader('sentinel/generators/web/tokens', 'sentinel/schemas/design/tokens.json', hashFile(tokensPath)),
-    generateCSSVariables(tokens),
-    ``,
-    generateTSExport(tokens),
-  ].join('\n')
+  const ext = path.extname(platform.output.tokens).toLowerCase()
+  const isCss = ext === '.css'
 
-  writeFile(platform.output.tokens, output)
+  // .css → CSS custom properties only (no TS exports)
+  // .ts / .tsx → TypeScript exports only (no :root block — invalid TS syntax)
+  const parts: string[] = [
+    generatedHeader('sentinel/generators/web/tokens', 'sentinel/schemas/design/tokens.json', hashFile(tokensPath)),
+  ]
+  if (isCss) {
+    parts.push(generateCSSVariables(tokens))
+  } else {
+    parts.push(generateTSExport(tokens))
+  }
+
+  writeFile(platform.output.tokens, parts.join('\n'))
   log.success(`Web tokens → ${platform.output.tokens}`)
 }
 

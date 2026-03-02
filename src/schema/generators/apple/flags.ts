@@ -11,13 +11,14 @@ export function generateAppleFlags(config: ResolvedConfig): void {
   const schema = readJSON<FeatureFlagsSchema>(flagsPath)
 
   const appleFlags = schema.flags.filter(f => f.platforms.includes('apple'))
+  const className = path.basename(platform.output.flags, path.extname(platform.output.flags))
 
   const output = [
     generatedHeader('sentinel/generators/apple/flags', 'sentinel/schemas/platform/feature-flags.json', hashFile(flagsPath)),
     `import Foundation`,
     ``,
     `// swiftlint:disable all`,
-    `public final class FeatureFlags {`,
+    `public final class ${className} {`,
     `  private init() {}`,
     ``,
     `  // MARK: — Remote override (set from API response or local debug)`,

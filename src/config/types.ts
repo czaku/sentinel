@@ -20,9 +20,9 @@ export interface ApplePlatformConfig {
   path: string
   language: 'swift'
   output: {
-    tokens: string
+    tokens?: string
     strings: string
-    flags: string
+    flags?: string
     models?: string
   }
 }
@@ -31,9 +31,9 @@ export interface GooglePlatformConfig {
   path: string
   language: 'kotlin'
   output: {
-    tokens: string
+    tokens?: string
     strings: string
-    flags: string
+    flags?: string
     models?: string
   }
 }
@@ -43,9 +43,9 @@ export interface WebPlatformConfig {
   language: 'typescript'
   framework?: Framework
   output: {
-    tokens: string
+    tokens?: string
     strings: string
-    flags: string
+    flags?: string
     models?: string
   }
 }
