@@ -1,0 +1,43 @@
+# sentinel.yaml — place at the repo root of your project
+# Run: sentinel mock:generate  to produce MockURLProtocol.swift + MockDispatcher.kt
+# Run: sentinel mock:validate  to validate all fixture JSON against endpoint schemas
+# Run: sentinel schema:generate to regenerate tokens, strings, models, and mock glue
+
+project: my-app
+
+platforms:
+  ios:
+    path: ios/
+    language: swift
+    framework: swiftui
+    output:
+      tokens:    ios/MyApp/DesignSystem/Tokens/AppTokens.swift
+      strings:   ios/MyApp/Core/Strings/AppStrings.swift
+      flags:     ios/MyApp/Core/Config/FeatureFlags.swift
+      models:    ios/MyApp/Core/Network/GeneratedModels.swift
+      endpoints: ios/MyApp/Core/Network/GeneratedEndpoints.swift
+      # mock:generate writes MockURLProtocol.swift here (DEBUG only)
+      mock:      ios/MyApp/Core/Network/MockURLProtocol.swift
+
+  android:
+    path: android/
+    language: kotlin
+    framework: compose
+    output:
+      tokens:    android/app/src/main/kotlin/com/myapp/design/AppTokens.kt
+      strings:   android/app/src/main/res/values/strings.xml
+      flags:     android/app/src/main/kotlin/com/myapp/core/FeatureFlags.kt
+      models:    android/app/src/main/kotlin/com/myapp/core/network/GeneratedModels.kt
+      endpoints: android/app/src/main/kotlin/com/myapp/core/network/GeneratedEndpoints.kt
+      # mock:generate writes MockDispatcher.kt here (debug sourceSet only)
+      mock:      android/app/src/debug/kotlin/com/myapp/core/mock/MockDispatcher.kt
+
+  web:
+    path: web/app/
+    language: typescript
+    framework: nextjs
+    output:
+      tokens:    web/app/src/styles/tokens.css
+      strings:   web/app/src/lib/strings.ts
+      flags:     web/app/src/lib/featureFlags.ts
+      endpoints: web/app/src/lib/generatedEndpoints.ts

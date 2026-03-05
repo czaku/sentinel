@@ -1,193 +1,209 @@
 # Sentinel
 
-Product integrity guardian — schema, contracts, chaos, visual, and flow testing across every platform.
+Cross-platform schema validation, code generation, and **network-level mock generation** for apps shipping on iOS, Android, and web with a shared backend.
 
-Sentinel is a standalone tool used by any project that ships to multiple platforms (iOS, Android, web, API). It is the single thing that answers: *is this product correct, consistent, and complete?*
+Sentinel answers: *"is this product correct, consistent, and complete?"*
 
-## What It Does
+---
 
-| Layer | Command | What it checks |
-|-------|---------|----------------|
-| **Schema** | `sentinel schema:validate` | Feature completeness, platform drift, stale generated files |
-| **Generate** | `sentinel schema:generate` | Tokens → Swift/Kotlin/CSS, strings → Swift/XML/TS, flags → all platforms, models → Swift structs/Kotlin data classes, navigation → AppRoute enums |
-| **Contracts** | `sentinel contracts` | API endpoints without consumers, views without API backing, feature matrix |
-| **Chaos** | `sentinel chaos` | Network failure, auth failure, data corruption, platform-specific edge cases |
-| **Flows** | `sentinel flows` | Maestro (native) + Playwright (web) E2E flows |
-| **Visual** | `sentinel visual` | Screenshot capture, regression diff, AI cross-platform parity |
-| **Perf** | `sentinel perf` | API response time budgets (p50/p95 vs declared maxMs) |
-| **Brain** | `sentinel brain` | AI analysis of all results → GitHub issues |
+## What it does
 
-## Setup
+| Command | What it does |
+|---------|-------------|
+| `sentinel schema:validate` | Validates all schemas, checks for generated-file drift, warns on missing fixtures |
+| `sentinel schema:generate` | Generates tokens, strings, feature flags, models for all platforms |
+| `sentinel contracts` | Validates endpoint model references are consistent |
+| `sentinel mock:generate` | Generates `MockURLProtocol.swift` (iOS) + `MockDispatcher.kt` (Android) from fixture mappings |
+| `sentinel mock:validate` | Validates all fixture JSON against endpoint response schemas |
+| `sentinel all` | Runs validate → generate → mock:generate |
 
-```bash
-# In your project root:
-npx sentinel init
-```
+---
 
-This creates:
-- `sentinel.yaml` — the contract declaration
-- `sentinel/` — all sentinel-owned files (schemas, chaos, flows, visual, perf)
+## Network-level mocking
 
-## Project Structure
+This is Sentinel's flagship feature. The generated mock code intercepts at the **transport layer** — `URLSession` on iOS, `OkHttpClient` on Android. Your app code (ViewModels, Services, APIClient) is completely unaware it is receiving local JSON.
 
-Every project using sentinel has this layout:
+### How it works
 
 ```
-myproject/
-├── sentinel.yaml              ← declare what this project promises
-├── sentinel/                  ← sentinel owns everything in here
-│   ├── schemas/
-│   │   ├── features/          ← one .json per feature
-│   │   ├── design/
-│   │   │   ├── tokens.json    ← design tokens (source of truth)
-│   │   │   └── strings.json   ← all copy (source of truth)
-│   │   ├── platform/
-│   │   │   ├── navigation.json       ← screens, tabs, deep links
-│   │   │   └── feature-flags.json   ← flag keys per platform
-│   │   └── models/            ← shared data model schemas
-│   │       └── workout.json
-│   ├── chaos/                 ← project-specific chaos scenarios
-│   ├── flows/
-│   │   ├── maestro/           ← native E2E flows (.yaml)
-│   │   └── playwright/        ← web E2E tests (.spec.ts)
-│   ├── visual/
-│   │   └── baselines/         ← screenshot baselines
-│   └── perf/
-│       └── budgets.yaml       ← p50/p95 response time budgets per endpoint
-└── docs/                      ← human documentation only
+sentinel/schemas/platform/mock-config.json
+    declares: endpoint path → fixture file
+
+sentinel/fixtures/
+    radar/nearby.json
+    browse/profiles.json
+    chat/matches.json
+    ...
+
+sentinel mock:generate
+    →  ios/…/MockURLProtocol.swift   (URLProtocol subclass, routes URLs → fixture files)
+    →  android/…/MockDispatcher.kt   (WireMock Dispatcher, routes paths → asset files)
 ```
 
-The internal structure of `sentinel/` is fixed. Projects do not configure it.
+The fixture JSON files live in one place (`sentinel/fixtures/`). Both platforms read from them. When the backend changes a response shape, you update the fixture once and both platforms stay in sync.
 
-## sentinel.yaml
+### iOS setup
 
-```yaml
-sentinel: "1.0"
-project: fitkind
-version: 1.0.0
-location: ./sentinel          # hardcoded convention — don't change
+**1. Add `sentinel/fixtures/` as a folder reference in Xcode** (drag into Project Navigator, select "Create folder references", add to **Dev/Debug target only** — never Release).
 
-platforms:
-  api:
-    path: ./backend
-    language: typescript
-    framework: nestjs
+**2. Register `MockURLProtocol` in your App entry point:**
 
-  apple:
-    path: ./apple
-    language: swift
-    output:
-      tokens:  ./apple/FitKind/DesignSystem/Tokens/FitKindTokens.swift
-      strings: ./apple/FitKind/Resources/Strings.swift
-      flags:   ./apple/FitKind/Core/FeatureFlags.swift
-
-  google:
-    path: ./google
-    language: kotlin
-    output:
-      tokens:  ./google/app/src/main/kotlin/com/fitkind/design/FitKindTokens.kt
-      strings: ./google/app/src/main/res/values/strings.xml
-      flags:   ./google/app/src/main/kotlin/com/fitkind/core/FeatureFlags.kt
-
-chaos:
-  targets:
-    api: http://localhost:3000
-```
-
-## Feature Schema
-
-Each feature in `sentinel/schemas/features/` declares what it promises across every platform:
-
-```json
-{
-  "$sentinel": "1.0",
-  "type": "feature",
-  "id": "workout-logging",
-  "name": "Workout Logging",
-  "milestone": 1,
-  "status": "planned",
-  "tier": "free",
-  "platforms": {
-    "api":    { "status": "planned", "endpoints": ["POST /workouts", "GET /workouts"] },
-    "apple":  { "status": "planned", "screens": ["WorkoutListView", "ActiveWorkoutView"] },
-    "google": { "status": "planned", "screens": ["WorkoutListScreen", "ActiveWorkoutScreen"] }
-  },
-  "flags": ["WORKOUT"],
-  "strings": ["workout.start_button", "workout.finish_button"]
+```swift
+// StarterApp.swift
+@main
+struct MyApp: App {
+    init() {
+        #if DEBUG
+        URLProtocol.registerClass(MockURLProtocol.self)
+        #endif
+    }
 }
 ```
 
-Sentinel validates: every declared screen exists, every endpoint has a consumer, no platform is left behind.
+**3. Run `sentinel mock:generate`** whenever you add or change an endpoint.
 
-## Model Schema
+That's it. Every `URLSession.shared.data(for:)` call in your app now returns local JSON with a 300ms simulated delay.
 
-Shared data models in `sentinel/schemas/models/` generate Swift structs and Kotlin data classes from a single definition:
+### Android setup
+
+**1. Copy or symlink `sentinel/fixtures/` into `android/app/src/debug/assets/fixtures/`** — Gradle includes `debug/assets/` in debug builds only.
+
+**2. Add `MockWebServer` and `okhttp-mockwebserver` to your debug dependencies:**
+
+```kotlin
+// build.gradle.kts
+debugImplementation("com.squareup.okhttp3:mockwebserver:4.12.0")
+```
+
+**3. Wire `MockDispatcher` in a Hilt debug module:**
+
+```kotlin
+// android/app/src/debug/kotlin/…/DebugNetworkModule.kt
+@Module
+@InstallIn(SingletonComponent::class)
+object DebugNetworkModule {
+    @Provides @Singleton
+    fun provideMockServer(@ApplicationContext ctx: Context): MockWebServer =
+        MockWebServer().apply {
+            dispatcher = MockDispatcher(ctx.assets)
+            start(8080)
+        }
+
+    @Provides @Singleton
+    fun provideBaseUrl(server: MockWebServer): String = server.url("/").toString()
+}
+```
+
+**4. Run `sentinel mock:generate`** whenever you add or change an endpoint.
+
+### Fixture validation
+
+Run `sentinel mock:validate` in CI to catch drift before it ships:
+
+```
+✓ GET  /api/v1/radar/nearby     → radar/nearby.json
+✓ GET  /api/v1/matches          → chat/matches.json
+✗ GET  /api/v1/profile/me       → profile/me.json: missing required field 'displayName'
+```
+
+If a backend engineer removes or renames a field in the response, CI fails. No silent drift.
+
+---
+
+## Project setup
+
+**1. Install sentinel as a dev dependency:**
+
+```bash
+npm install --save-dev sentinel
+```
+
+**2. Copy `sentinel.yaml.example` to your repo root as `sentinel.yaml`:**
+
+```bash
+cp node_modules/sentinel/sentinel.yaml.example sentinel.yaml
+```
+
+Edit the output paths to match your project structure.
+
+**3. Create your schema directory:**
+
+```
+sentinel/
+├── schemas/
+│   ├── design/
+│   │   ├── tokens.json
+│   │   └── strings.json
+│   ├── features/
+│   │   └── auth-endpoints.json
+│   ├── models/
+│   │   └── user.json
+│   └── platform/
+│       ├── feature-flags.json
+│       ├── mock-config.json     ← endpoint → fixture mappings
+│       └── navigation.json
+└── fixtures/
+    ├── auth/
+    │   ├── verify-response.json
+    │   └── magic-link-response.json
+    └── radar/
+        └── nearby.json
+```
+
+**4. Add to your pre-commit hook or CI:**
+
+```bash
+npx sentinel schema:validate
+npx sentinel mock:validate
+```
+
+---
+
+## mock-config.json format
 
 ```json
 {
   "$sentinel": "1.0",
-  "type": "model",
-  "id": "workout",
-  "name": "Workout",
-  "platforms": ["apple", "google"],
-  "fields": [
-    { "name": "id",         "type": "UUID",    "optional": false },
-    { "name": "name",       "type": "String",  "optional": false },
-    { "name": "startedAt",  "type": "Date",    "optional": false },
-    { "name": "durationMs", "type": "Int",     "optional": true  }
+  "type": "mock-config",
+  "id": "mock-config",
+
+  "fixtures": [
+    { "platform": "ios",     "path": "sentinel/fixtures" },
+    { "platform": "android", "path": "sentinel/fixtures" }
+  ],
+
+  "endpoints": [
+    { "method": "GET",  "path": "/api/v1/radar/nearby",   "fixture": "radar/nearby.json" },
+    { "method": "POST", "path": "/api/v1/auth/magic-link/verify", "fixture": "auth/verify-response.json" },
+    { "method": "GET",  "path": "/api/v1/chat/:matchId/messages", "fixture": "chat/messages.json", "statusCode": 200 }
   ]
 }
 ```
 
-Generates:
-- `struct Workout: Codable, Identifiable` (Swift)
-- `@Serializable data class Workout(...)` (Kotlin)
+Path parameters like `:matchId` are automatically treated as wildcards in the generated URL routing.
 
-Enums are supported via `"isEnum": true` with `"enumValues": [{ "name": "active", "rawValue": "active" }]`.
+---
 
-## Chaos Scenarios
+## sentinel.yaml platform output fields
 
-Sentinel ships built-in scenario categories — no setup required:
+```yaml
+platforms:
+  ios:
+    language: swift
+    output:
+      tokens:    ios/MyApp/DesignSystem/AppTokens.swift
+      strings:   ios/MyApp/Core/Strings.swift
+      flags:     ios/MyApp/Core/FeatureFlags.swift
+      models:    ios/MyApp/Core/Models.swift
+      endpoints: ios/MyApp/Core/GeneratedEndpoints.swift
+      mock:      ios/MyApp/Core/Network/MockURLProtocol.swift   # ← new
 
-| Category | Scenarios |
-|----------|-----------|
-| **auth** | No token → 401, expired token → 401, wrong role → 403 |
-| **network** | Offline mode, slow 3G simulation, concurrent requests |
-| **data** | Corrupt JSON → 400, empty collection → `[]`, large payload → 413 |
-| **payment** | Card declined → 402/403, subscription expired, webhook shape |
-| **platform** | Low storage, background kill recovery, clock skew |
-
-Write project-specific chaos scenarios in `sentinel/chaos/`:
-
-```typescript
-// sentinel/chaos/workout-offline.ts
-import { NetworkChaosScenario } from 'sentinel/chaos/scenarios/network'
-
-export default class WorkoutOfflineScenario extends NetworkChaosScenario {
-  id = 'workout-offline'
-  description = 'Active workout → network drops → must save locally, no data loss'
-
-  async run(opts) {
-    return this.simulateOffline(opts, async () => {
-      // assert offline save behaviour
-      return { passed: true, observations: ['Local save succeeded'] }
-    })
-  }
-}
+  android:
+    language: kotlin
+    output:
+      tokens:    android/app/src/main/kotlin/…/AppTokens.kt
+      strings:   android/app/src/main/res/values/strings.xml
+      flags:     android/app/src/main/kotlin/…/FeatureFlags.kt
+      models:    android/app/src/main/kotlin/…/Models.kt
+      mock:      android/app/src/debug/kotlin/…/MockDispatcher.kt  # ← new
 ```
-
-## CI Integration
-
-A ready-to-use GitHub Actions workflow template is at [`templates/sentinel-ci.yml`](./templates/sentinel-ci.yml). Copy it into your project:
-
-```bash
-cp node_modules/sentinel/templates/sentinel-ci.yml .github/workflows/sentinel.yml
-```
-
-The template runs schema validation, contract checks, and chaos tests on every push, with optional perf and visual checks on staging. It posts results to the GitHub Actions step summary and can create GitHub issues for failures when `ANTHROPIC_API_KEY` and `SENTINEL_GITHUB_TOKEN` are configured.
-
-## Adopters
-
-- [fitkind](../fitkind) — native iOS/Android fitness tracker
-- [univiirse](../univiirse) — AI storytelling platform
-- [goala](../goala) — AI productivity assistant

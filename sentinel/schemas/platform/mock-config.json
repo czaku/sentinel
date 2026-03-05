@@ -1,0 +1,25 @@
+{
+  "$sentinel": "1.0",
+  "type": "mock-config",
+  "id": "mock-config",
+
+  "fixtures": [
+    { "platform": "ios",     "path": "ios/SitchesTests/Fixtures" },
+    { "platform": "android", "path": "android/app/src/debug/assets/fixtures" }
+  ],
+
+  "endpoints": [
+    { "method": "POST", "path": "/api/v1/auth/magic-link/request",  "fixture": "auth/magic-link-response.json" },
+    { "method": "POST", "path": "/api/v1/auth/magic-link/verify",   "fixture": "auth/verify-response.json" },
+    { "method": "POST", "path": "/api/v1/auth/refresh",             "fixture": "auth/refresh-response.json" },
+    { "method": "GET",  "path": "/api/v1/radar/nearby",             "fixture": "radar/nearby.json" },
+    { "method": "POST", "path": "/api/v1/radar/location",           "fixture": "auth/empty.json" },
+    { "method": "GET",  "path": "/api/v1/profiles/browse",          "fixture": "browse/profiles.json" },
+    { "method": "POST", "path": "/api/v1/profiles/like",            "fixture": "browse/like-response.json" },
+    { "method": "GET",  "path": "/api/v1/matches",                  "fixture": "chat/matches.json" },
+    { "method": "GET",  "path": "/api/v1/chat/:matchId/messages",   "fixture": "chat/messages.json" },
+    { "method": "GET",  "path": "/api/v1/profile/me",               "fixture": "profile/me.json" },
+    { "method": "PATCH","path": "/api/v1/profile/me",               "fixture": "profile/me.json" },
+    { "method": "POST", "path": "/api/v1/notification/register",    "fixture": "auth/empty.json" }
+  ]
+}
