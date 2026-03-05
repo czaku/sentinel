@@ -1138,7 +1138,7 @@ function genSwiftMockURLProtocol(mappings: EndpointFixtureMapping[]): string {
       const method = m.method.toUpperCase();
       const fixture = m.fixture;
       const status = m.statusCode ?? 200;
-      return `        // ${method} ${m.path}\n        (method: "${method}", pattern: #"${pattern}"#, fixture: "${fixture}", status: ${status}),`;
+      return `        // ${method} ${m.path}\n        Route(method: "${method}", pattern: #"${pattern}"#, fixture: "${fixture}", status: ${status}),`;
     })
     .join('\n');
 
@@ -1192,7 +1192,7 @@ ${cases}
 
     override func startLoading() {
         guard let url = request.url, let method = request.httpMethod else {
-            client?.urlProtocolDidFailWithError(URLError(.badURL)); return
+            client?.urlProtocol(self, didFailWithError: URLError(.badURL)); return
         }
         let path = url.path + (url.query.map { "?\\($0)" } ?? "")
         guard let route = Self.routes.first(where: { r in
@@ -1200,7 +1200,7 @@ ${cases}
             (try? NSRegularExpression(pattern: r.pattern))
                 .map { $0.firstMatch(in: path, range: NSRange(path.startIndex..., in: path)) != nil } ?? false
         }) else {
-            client?.urlProtocolDidFailWithError(URLError(.fileDoesNotExist)); return
+            client?.urlProtocol(self, didFailWithError: URLError(.fileDoesNotExist)); return
         }
 
         // Load fixture from bundle — sentinel/fixtures/ added as folder reference
@@ -1212,7 +1212,7 @@ ${cases}
             let data = try? Data(contentsOf: bundleURL)
         else {
             print("[MockURLProtocol] fixture not found: \\(route.fixture)")
-            client?.urlProtocolDidFailWithError(URLError(.fileDoesNotExist))
+            client?.urlProtocol(self, didFailWithError: URLError(.fileDoesNotExist))
             return
         }
 
