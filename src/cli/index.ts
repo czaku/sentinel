@@ -365,19 +365,19 @@ function detectDrift(all: ReturnType<typeof loadAll>): string[] {
     const lang = cfg.language ?? '';
 
     if (lang === 'swift') {
-      checkFile(out.tokens, genSwiftTokens(tokensSchema), `${platform} tokens`);
+      checkFile(out.tokens, genSwiftTokens(tokensSchema, out.tokens ?? ''), `${platform} tokens`);
       checkFile(out.strings, genSwiftStrings(stringsSchema), `${platform} strings`);
       checkFile(out.flags, genSwiftFlags(flagsSchema), `${platform} flags`);
       checkFile(out.models, genSwiftModels(all.models), `${platform} models`);
       if (out.endpoints && endpointSchemas.length > 0)
         checkFile(out.endpoints, genSwiftEndpoints(endpointSchemas), `${platform} endpoints`);
     } else if (lang === 'kotlin') {
-      checkFile(out.tokens, genKotlinTokens(tokensSchema), `${platform} tokens`);
+      checkFile(out.tokens, genKotlinTokens(tokensSchema, out.tokens ?? ''), `${platform} tokens`);
       checkFile(out.strings, genKotlinStrings(stringsSchema), `${platform} strings`);
-      checkFile(out.flags, genKotlinFlags(flagsSchema), `${platform} flags`);
-      checkFile(out.models, genKotlinModels(all.models), `${platform} models`);
+      checkFile(out.flags, genKotlinFlags(flagsSchema, out.flags ?? ''), `${platform} flags`);
+      checkFile(out.models, genKotlinModels(all.models, out.models ?? ''), `${platform} models`);
       if (out.endpoints && endpointSchemas.length > 0)
-        checkFile(out.endpoints, genKotlinEndpoints(endpointSchemas), `${platform} endpoints`);
+        checkFile(out.endpoints, genKotlinEndpoints(endpointSchemas, out.endpoints ?? ''), `${platform} endpoints`);
     } else if (lang === 'typescript') {
       checkFile(out.tokens, genCssTokens(tokensSchema), `${platform} tokens`);
       checkFile(out.strings, genTsStrings(stringsSchema), `${platform} strings`);
@@ -394,71 +394,54 @@ function detectDrift(all: ReturnType<typeof loadAll>): string[] {
 // Swift generators
 // ---------------------------------------------------------------------------
 
-function genSwiftTokens(tokens: Record<string, unknown>): string {
+function genSwiftTokens(tokens: Record<string, unknown>, outputPath: string = ''): string {
+  const swPrefix = deriveSwiftTokensPrefix(outputPath);
   const lines: string[] = [
     GENERATED_HEADER('sentinel/schemas/design/tokens.json'),
     'import SwiftUI',
     '',
-    '// MARK: - Colours',
+    `// MARK: - ${swPrefix}`,
+    `// Usage: ${swPrefix}.Color.primary  ${swPrefix}.Spacing.md  ${swPrefix}.Radius.lg`,
+    '',
+    `enum ${swPrefix} {`,
     '',
   ];
 
-  const colors = tokens['colors'] as Record<string, Record<string, { value: string; description?: string }>>;
-  for (const [group, entries] of Object.entries(colors)) {
-    lines.push(`enum FKColor${toPascalCase(group)} {`);
-    for (const [name, def] of Object.entries(entries)) {
-      const comment = def.description ? `  // ${def.description}` : '';
-      lines.push(`    static let ${name} = Color(hex: "${def.value}")${comment}`);
-    }
-    lines.push('}', '');
+  // Nested Color enum — flat token map
+  lines.push('    enum Color {');
+  const colors = tokens['colors'] as Record<string, { value: string; description?: string }>;
+  for (const [name, def] of Object.entries(colors)) {
+    const comment = def.description ? `  // ${def.description}` : '';
+    lines.push(`        static let ${name} = Color(hex: "${def.value}")${comment}`);
   }
+  lines.push('    }', '');
 
-  lines.push('// MARK: - Spacing', '', 'enum FKSpacing {');
+  // Nested Spacing enum
+  lines.push('    enum Spacing {');
   const spacing = tokens['spacing'] as Record<string, { value: string }>;
   for (const [k, v] of Object.entries(spacing)) {
-    lines.push(`    static let ${k === '0' ? 's0' : `s${k}`}: CGFloat = ${parseValue(v.value)}`);
+    lines.push(`        static let ${k}: CGFloat = ${parseValue(v.value)}`);
   }
-  lines.push('}', '');
+  lines.push('    }', '');
 
-  lines.push('// MARK: - Border Radius', '', 'enum FKRadius {');
+  // Nested Radius enum
+  lines.push('    enum Radius {');
   const radii = tokens['borderRadius'] as Record<string, { value: string; description?: string }>;
   for (const [k, v] of Object.entries(radii)) {
     const comment = v.description ? `  // ${v.description}` : '';
-    lines.push(`    static let ${k}: CGFloat = ${parseValue(v.value)}${comment}`);
+    lines.push(`        static let ${k}: CGFloat = ${parseValue(v.value)}${comment}`);
   }
-  lines.push('}', '');
+  lines.push('    }', '');
 
-  lines.push('// MARK: - Animation', '', 'enum FKAnimation {');
+  // Nested Animation enum
+  lines.push('    enum Animation {');
   const anim = ((tokens['animation'] as { duration: Record<string, { value: string; description?: string }> } | undefined)?.duration ?? {});
   for (const [k, v] of Object.entries(anim)) {
     const comment = v.description ? `  // ${v.description}` : '';
-    lines.push(`    static let ${k}: Double = ${parseValue(v.value) / 1000}${comment}`);
+    lines.push(`        static let ${k}: Double = ${parseValue(v.value) / 1000}${comment}`);
   }
-  lines.push('}', '');
+  lines.push('    }', '');
 
-  lines.push('// MARK: - Icon Sizes', '', 'enum FKIconSize {');
-  const icons = (tokens['iconSizes'] ?? {}) as Record<string, { value: string }>;
-  for (const [k, v] of Object.entries(icons)) {
-    lines.push(`    static let ${k}: CGFloat = ${parseValue(v.value)}`);
-  }
-  lines.push('}', '');
-
-  lines.push('// MARK: - Component Tokens', '', 'enum FKComponent {');
-  const comp = (tokens['components'] ?? {}) as Record<string, unknown>;
-  for (const [k, v] of Object.entries(comp)) {
-    if (typeof v === 'object' && v !== null && 'value' in v) {
-      const val = parseValue((v as { value: string }).value);
-      if (!isNaN(val)) {
-        const comment = 'description' in v ? `  // ${(v as { description: string }).description}` : '';
-        lines.push(`    static let ${k}: CGFloat = ${val}${comment}`);
-      }
-    } else if (typeof v === 'object' && v !== null) {
-      for (const [subK, subV] of Object.entries(v as Record<string, { value: string }>)) {
-        const val = parseValue(subV.value);
-        if (!isNaN(val)) lines.push(`    static let ${k}${toPascalCase(subK)}: CGFloat = ${val}`);
-      }
-    }
-  }
   lines.push('}', '');
 
   lines.push(
@@ -631,37 +614,65 @@ function swiftReturnType(ep: Record<string, unknown>): string {
 // Kotlin generators
 // ---------------------------------------------------------------------------
 
-function genKotlinTokens(tokens: Record<string, unknown>): string {
+
+function deriveKotlinPackage(outputPath: string): string {
+  // Derive package from output path: everything between "kotlin/" and the filename
+  // e.g. ./android/app/src/main/kotlin/app/sitches/ios/design/tokens/AppTokens.kt
+  //   → app.sitches.ios.design.tokens
+  const match = outputPath.match(/kotlin\/(.+)\/[^/]+\.kt$/);
+  if (match) return match[1].replace(/\//g, '.');
+  return 'app.generated';
+}
+
+function deriveKotlinPrefix(outputPath: string): string {
+  // e.g. AppTokens.kt  -> "App"
+  //      FitKindTokens.kt -> "FitKind"
+  //      tokens.kt -> "" (no recognised suffix — fall back to "App")
+  const fname = outputPath.split('/').pop() ?? '';
+  const m = fname.match(/^(.+?)(?:Tokens|Design|Colors?|Theme)?\.kt$/i);
+  if (m && m[1]) return m[1];
+  return 'App';
+}
+
+function deriveSwiftTokensPrefix(outputPath: string): string {
+  const fname = outputPath.split('/').pop() ?? '';
+  const m = fname.match(/^(.+?)(?:Tokens|Design|Colors?|Theme)?\.swift$/i);
+  if (m && m[1]) return m[1];
+  return 'AppTokens';
+}
+
+
+function genKotlinTokens(tokens: Record<string, unknown>, outputPath: string = ''): string {
   const lines: string[] = [
     GENERATED_HEADER('sentinel/schemas/design/tokens.json'),
     '@file:Suppress("MagicNumber")',
     '',
-    'package com.fitkind.design',
+    `package ${outputPath ? deriveKotlinPackage(outputPath) : 'app.design.tokens'}`,
     '',
     'import androidx.compose.ui.graphics.Color',
     'import androidx.compose.ui.unit.dp',
     '',
   ];
 
-  const colors = tokens['colors'] as Record<string, Record<string, { value: string; description?: string }>>;
-  for (const [group, entries] of Object.entries(colors)) {
-    lines.push(`object FKColor${toPascalCase(group)} {`);
-    for (const [name, def] of Object.entries(entries)) {
-      const { r, g, b } = hexToRgbFloat(def.value);
-      const comment = def.description ? '  // ' + def.description : '';
-      lines.push(`    val ${toPascalCase(name)} = Color(red = ${r}, green = ${g}, blue = ${b})${comment}`);
-    }
-    lines.push('}', '');
-  }
-
-  lines.push('object FKSpacing {');
-  const spacing = tokens['spacing'] as Record<string, { value: string }>;
-  for (const [k, v] of Object.entries(spacing)) {
-    lines.push(`    val ${k === '0' ? 's0' : `s${k}`} = ${parseValue(v.value)}.dp`);
+  const prefix = deriveKotlinPrefix(outputPath);
+  // Flat {Prefix}Colors object — all colours merged into one
+  lines.push(`object ${prefix}Colors {`);
+  const colors = tokens['colors'] as Record<string, { value: string; description?: string }>;
+  for (const [name, def] of Object.entries(colors)) {
+    const hexVal = def.value.replace('#', '');
+    const comment = def.description ? '  // ' + def.description : '';
+    lines.push(`    val ${toPascalCase(name)} = Color(0xFF${hexVal.toUpperCase()})${comment}`);
   }
   lines.push('}', '');
 
-  lines.push('object FKRadius {');
+  lines.push(`object ${prefix}Spacing {`);
+  const spacing = tokens['spacing'] as Record<string, { value: string }>;
+  for (const [k, v] of Object.entries(spacing)) {
+    lines.push(`    val ${k} = ${parseValue(v.value)}.dp`);
+  }
+  lines.push('}', '');
+
+  lines.push(`object ${prefix}Radius {`);
   const radii = tokens['borderRadius'] as Record<string, { value: string; description?: string }>;
   for (const [k, v] of Object.entries(radii)) {
     const comment = v.description ? '  // ' + v.description : '';
@@ -669,18 +680,11 @@ function genKotlinTokens(tokens: Record<string, unknown>): string {
   }
   lines.push('}', '');
 
-  lines.push('object FKAnimation {');
+  lines.push(`object ${prefix}Animation {`);
   const anim = ((tokens['animation'] as { duration: Record<string, { value: string; description?: string }> } | undefined)?.duration ?? {});
   for (const [k, v] of Object.entries(anim)) {
     const comment = v.description ? '  // ' + v.description : '';
     lines.push(`    const val ${k}Ms = ${Math.round(parseValue(v.value))}${comment}`);
-  }
-  lines.push('}', '');
-
-  lines.push('object FKIconSize {');
-  const icons = (tokens['iconSizes'] ?? {}) as Record<string, { value: string }>;
-  for (const [k, v] of Object.entries(icons)) {
-    lines.push(`    val ${k} = ${parseValue(v.value)}.dp`);
   }
   lines.push('}', '');
 
@@ -705,11 +709,11 @@ function genKotlinStrings(stringsSchema: Record<string, unknown>): string {
   return lines.join('\n');
 }
 
-function genKotlinFlags(flagsSchema: Record<string, unknown>): string {
+function genKotlinFlags(flagsSchema: Record<string, unknown>, outputPath: string = ''): string {
   const flags = flagsSchema['flags'] as Array<{ key: string; description: string; defaultEnabled: boolean }>;
   const lines: string[] = [
     GENERATED_HEADER('sentinel/schemas/platform/feature-flags.json'),
-    'package com.fitkind.core',
+    `package ${outputPath ? deriveKotlinPackage(outputPath) : 'app.core'}`,
     '',
     '// Off = feature is completely hidden — no UI, no API calls.',
     'enum class FeatureFlag(val key: String, val isEnabled: Boolean) {',
@@ -732,8 +736,9 @@ function kotlinFieldType(type: string, isArray: boolean, optional: boolean): str
   return t;
 }
 
-function genKotlinModels(models: SchemaFile[]): string {
-  const lines: string[] = [GENERATED_HEADER('sentinel/schemas/models/*.json'), 'package com.fitkind.models', ''];
+function genKotlinModels(models: SchemaFile[], outputPath: string = ''): string {
+  const pkg = outputPath ? deriveKotlinPackage(outputPath) : 'app.models';
+  const lines: string[] = [GENERATED_HEADER('sentinel/schemas/models/*.json'), `package ${pkg}`, ''];
 
   for (const { content: s } of models.filter((m) => m.content['isEnum'])) {
     const schema = s as Record<string, unknown>;
@@ -760,10 +765,10 @@ function genKotlinModels(models: SchemaFile[]): string {
 }
 
 /** Generate Kotlin APIClient interface from endpoint schemas. */
-function genKotlinEndpoints(endpointSchemas: SchemaFile[]): string {
+function genKotlinEndpoints(endpointSchemas: SchemaFile[], outputPath: string = ''): string {
   const lines: string[] = [
     GENERATED_HEADER('sentinel/schemas/features/*-endpoints.json'),
-    'package com.fitkind.core',
+    `package ${outputPath ? deriveKotlinPackage(outputPath) : 'app.core'}`,
     '',
     '// APIClient interface — implement RealAPIClient (Retrofit) and MockAPIClient (fixtures).',
     '// Inject via Hilt: @Inject constructor(val apiClient: APIClient)',
@@ -1062,19 +1067,19 @@ function cmdGenerate(): void {
     const lang = cfg.language ?? '';
 
     if (lang === 'swift') {
-      if (out.tokens) writeFile(join(ROOT, out.tokens), genSwiftTokens(tokensSchema));
+      if (out.tokens) writeFile(join(ROOT, out.tokens), genSwiftTokens(tokensSchema, out.tokens));
       if (out.strings) writeFile(join(ROOT, out.strings), genSwiftStrings(stringsSchema));
       if (out.flags) writeFile(join(ROOT, out.flags), genSwiftFlags(flagsSchema));
       if (out.models) writeFile(join(ROOT, out.models), genSwiftModels(all.models));
       if (out.endpoints && endpointSchemas.length > 0)
         writeFile(join(ROOT, out.endpoints), genSwiftEndpoints(endpointSchemas));
     } else if (lang === 'kotlin') {
-      if (out.tokens) writeFile(join(ROOT, out.tokens), genKotlinTokens(tokensSchema));
+      if (out.tokens) writeFile(join(ROOT, out.tokens), genKotlinTokens(tokensSchema, out.tokens));
       if (out.strings) writeFile(join(ROOT, out.strings), genKotlinStrings(stringsSchema));
-      if (out.flags) writeFile(join(ROOT, out.flags), genKotlinFlags(flagsSchema));
-      if (out.models) writeFile(join(ROOT, out.models), genKotlinModels(all.models));
+      if (out.flags) writeFile(join(ROOT, out.flags), genKotlinFlags(flagsSchema, out.flags));
+      if (out.models) writeFile(join(ROOT, out.models), genKotlinModels(all.models, out.models));
       if (out.endpoints && endpointSchemas.length > 0)
-        writeFile(join(ROOT, out.endpoints), genKotlinEndpoints(endpointSchemas));
+        writeFile(join(ROOT, out.endpoints), genKotlinEndpoints(endpointSchemas, out.endpoints));
     } else if (lang === 'typescript') {
       if (out.tokens) writeFile(join(ROOT, out.tokens), genCssTokens(tokensSchema));
       if (out.strings) writeFile(join(ROOT, out.strings), genTsStrings(stringsSchema));
