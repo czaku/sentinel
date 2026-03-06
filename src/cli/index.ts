@@ -407,14 +407,16 @@ function genSwiftTokens(tokens: Record<string, unknown>, outputPath: string = ''
     '',
   ];
 
-  // Nested Color enum — flat token map
-  lines.push('    enum Color {');
-  const colors = tokens['colors'] as Record<string, { value: string; description?: string }>;
-  for (const [name, def] of Object.entries(colors)) {
-    const comment = def.description ? `  // ${def.description}` : '';
-    lines.push(`        static let ${name} = Color(hex: "${def.value}")${comment}`);
+  // Nested Color enum — one per token group
+  const colors = tokens['colors'] as Record<string, Record<string, { value: string; description?: string }>>;
+  for (const [group, entries] of Object.entries(colors)) {
+    lines.push(`    enum ${toPascalCase(group)} {`);
+    for (const [name, def] of Object.entries(entries)) {
+      const comment = def.description ? `  // ${def.description}` : '';
+      lines.push(`        static let ${name} = Color(hex: "${def.value}")${comment}`);
+    }
+    lines.push('    }', '');
   }
-  lines.push('    }', '');
 
   // Nested Spacing enum
   lines.push('    enum Spacing {');
@@ -655,15 +657,16 @@ function genKotlinTokens(tokens: Record<string, unknown>, outputPath: string = '
   ];
 
   const prefix = deriveKotlinPrefix(outputPath);
-  // Flat {Prefix}Colors object — all colours merged into one
-  lines.push(`object ${prefix}Colors {`);
-  const colors = tokens['colors'] as Record<string, { value: string; description?: string }>;
-  for (const [name, def] of Object.entries(colors)) {
-    const hexVal = def.value.replace('#', '');
-    const comment = def.description ? '  // ' + def.description : '';
-    lines.push(`    val ${toPascalCase(name)} = Color(0xFF${hexVal.toUpperCase()})${comment}`);
+  const colors = tokens['colors'] as Record<string, Record<string, { value: string; description?: string }>>;
+  for (const [group, entries] of Object.entries(colors)) {
+    lines.push(`object ${prefix}Color${toPascalCase(group)} {`);
+    for (const [name, def] of Object.entries(entries)) {
+      const hexVal = def.value.replace('#', '');
+      const comment = def.description ? '  // ' + def.description : '';
+      lines.push(`    val ${toPascalCase(name)} = Color(0xFF${hexVal.toUpperCase()})${comment}`);
+    }
+    lines.push('}', '');
   }
-  lines.push('}', '');
 
   lines.push(`object ${prefix}Spacing {`);
   const spacing = tokens['spacing'] as Record<string, { value: string }>;
