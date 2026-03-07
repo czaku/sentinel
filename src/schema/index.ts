@@ -15,6 +15,7 @@ import { generateWebFlags } from './generators/web/flags.js'
 import { detectDrift } from './validators/drift.js'
 import { checkStaleness } from './validators/staleness.js'
 import { checkCompleteness } from './validators/completeness.js'
+import { checkInvariants } from './validators/invariants.js'
 import { log } from '../utils/logger.js'
 
 export async function generateAll(config: ResolvedConfig): Promise<void> {
@@ -54,5 +55,6 @@ export async function validateAll(config: ResolvedConfig): Promise<ValidationRes
     Promise.resolve(checkStaleness(config)),
   ])
 
-  return [completeness, drift, staleness]
+  const invariants = checkInvariants(config)
+  return [completeness, drift, staleness, invariants]
 }

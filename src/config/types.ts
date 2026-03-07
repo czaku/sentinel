@@ -21,9 +21,10 @@ export interface ApplePlatformConfig {
   language: 'swift'
   output: {
     tokens?: string
-    strings: string
+    strings?: string
     flags?: string
     models?: string
+    mock?: string
   }
 }
 
@@ -32,9 +33,10 @@ export interface GooglePlatformConfig {
   language: 'kotlin'
   output: {
     tokens?: string
-    strings: string
+    strings?: string
     flags?: string
     models?: string
+    mock?: string
   }
 }
 
@@ -44,7 +46,7 @@ export interface WebPlatformConfig {
   framework?: Framework
   output: {
     tokens?: string
-    strings: string
+    strings?: string
     flags?: string
     models?: string
   }
@@ -67,6 +69,15 @@ export interface ChaosConfig {
 export interface NotificationsConfig {
   github_issues?: boolean
   on_failure?: Array<'schema' | 'contracts' | 'chaos' | 'visual' | 'perf' | 'flows'>
+}
+
+// ─── Invariant Checks ─────────────────────────────────────────────────────────
+
+export interface InvariantCheck {
+  file: string             // path relative to project root
+  contains: string         // substring that must be present in the file
+  error: string            // error message shown if check fails
+  fix?: string             // suggested fix
 }
 
 // ─── Root Config ──────────────────────────────────────────────────────────────
@@ -99,6 +110,7 @@ export interface SentinelConfig {
   chaos?: ChaosConfig
   notifications?: NotificationsConfig
   github?: GitHubConfig
+  invariants?: InvariantCheck[]
 }
 
 // ─── Resolved Config (post-load, all paths absolute) ─────────────────────────
