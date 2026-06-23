@@ -1,0 +1,45 @@
+{
+  "id": "T-LU-022",
+  "title": "merge origin/codex/sentinel-registry-worktree-skip into main before release tag",
+  "description": "sentinel's codex/sentinel-registry-worktree-skip branch has 27 files changed (+2256/-619 lines) including gate-result.ts, onlytools/validator.ts, and scoped mock fixture sets. These features must land on main before any release tag is cut.",
+  "product": null,
+  "lane": "launch-readiness",
+  "wave": null,
+  "space": null,
+  "status": "todo",
+  "priority": "critical",
+  "platform": null,
+  "assignee": null,
+  "dependsOn": [],
+  "spec": null,
+  "parentId": null,
+  "dueDate": null,
+  "context": [],
+  "acceptanceCriteria": [
+    "git log main shows the 5 commits from codex/sentinel-registry-worktree-skip",
+    "CI green on main after merge",
+    "sentinel --help and --version work after merge",
+    "does NOT break existing T-LU-015..021 open tasks"
+  ],
+  "statusHistory": [
+    {
+      "status": "todo",
+      "ts": "2026-06-23T15:11:51.358Z"
+    }
+  ],
+  "attachments": [],
+  "stage": null,
+  "runStatus": null,
+  "stageHistory": [],
+  "recurring": null,
+  "createdAt": "2026-06-23T15:11:51.356Z",
+  "updatedAt": "2026-06-23T15:11:51.356Z",
+  "proofReferences": [],
+  "proofOverrides": [],
+  "surfaces": [],
+  "parityPair": null,
+  "validationOverrides": null,
+  "executionMode": null,
+  "taskGraph": null,
+  "runtime": null
+}
