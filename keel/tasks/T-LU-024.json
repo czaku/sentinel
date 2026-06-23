@@ -1,0 +1,44 @@
+{
+  "id": "T-LU-024",
+  "title": "run full vitest smoke suite (29 test files) and verify all green on main",
+  "description": "The 29 sentinel test files were not run during the Jun 23 quality audit. Must verify they all pass on main (post-merge) before cutting a release tag.",
+  "product": null,
+  "lane": "launch-readiness",
+  "wave": null,
+  "space": null,
+  "status": "todo",
+  "priority": "high",
+  "platform": null,
+  "assignee": null,
+  "dependsOn": [],
+  "spec": null,
+  "parentId": null,
+  "dueDate": null,
+  "context": [],
+  "acceptanceCriteria": [
+    "vitest reports 0 failing tests across all 29 test files",
+    "no jest.* API calls present (vi.* only)",
+    "does NOT require any code changes — this is a verification task; open separate fix tasks if failures found"
+  ],
+  "statusHistory": [
+    {
+      "status": "todo",
+      "ts": "2026-06-23T15:12:00.199Z"
+    }
+  ],
+  "attachments": [],
+  "stage": null,
+  "runStatus": null,
+  "stageHistory": [],
+  "recurring": null,
+  "createdAt": "2026-06-23T15:12:00.198Z",
+  "updatedAt": "2026-06-23T15:12:00.198Z",
+  "proofReferences": [],
+  "proofOverrides": [],
+  "surfaces": [],
+  "parityPair": null,
+  "validationOverrides": null,
+  "executionMode": null,
+  "taskGraph": null,
+  "runtime": null
+}
