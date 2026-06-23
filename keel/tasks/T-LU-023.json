@@ -1,0 +1,45 @@
+{
+  "id": "T-LU-023",
+  "title": "fix 2 critical and 4 high npm audit vulnerabilities in sentinel lockfile",
+  "description": "npm audit reports 2 critical + 4 high + 5 moderate vulns in sentinel. Must be resolved before open-source release. Refresh lockfile and bump affected deps.",
+  "product": null,
+  "lane": "launch-readiness",
+  "wave": null,
+  "space": null,
+  "status": "todo",
+  "priority": "critical",
+  "platform": null,
+  "assignee": null,
+  "dependsOn": [],
+  "spec": null,
+  "parentId": null,
+  "dueDate": null,
+  "context": [],
+  "acceptanceCriteria": [
+    "npm audit reports 0 critical vulns and 0 high vulns",
+    "package-lock.json updated and committed",
+    "all 29 test files still pass after dep bump",
+    "does NOT change sentinel public API"
+  ],
+  "statusHistory": [
+    {
+      "status": "todo",
+      "ts": "2026-06-23T15:11:54.059Z"
+    }
+  ],
+  "attachments": [],
+  "stage": null,
+  "runStatus": null,
+  "stageHistory": [],
+  "recurring": null,
+  "createdAt": "2026-06-23T15:11:54.058Z",
+  "updatedAt": "2026-06-23T15:11:54.058Z",
+  "proofReferences": [],
+  "proofOverrides": [],
+  "surfaces": [],
+  "parityPair": null,
+  "validationOverrides": null,
+  "executionMode": null,
+  "taskGraph": null,
+  "runtime": null
+}
