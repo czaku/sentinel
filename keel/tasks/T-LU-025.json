@@ -1,0 +1,45 @@
+{
+  "id": "T-LU-025",
+  "title": "tag sentinel v0.3.0 release on main and push to GitHub",
+  "description": "Cut the first post-merge release tag for sentinel. Block on: T-LU-022 (branch merged), T-LU-023 (vulns fixed), T-LU-015..021 open tasks resolved, smoke green.",
+  "product": null,
+  "lane": "launch-readiness",
+  "wave": null,
+  "space": null,
+  "status": "todo",
+  "priority": "medium",
+  "platform": null,
+  "assignee": null,
+  "dependsOn": [],
+  "spec": null,
+  "parentId": null,
+  "dueDate": null,
+  "context": [],
+  "acceptanceCriteria": [
+    "git tag v0.3.0 on main and pushed to origin",
+    "GitHub Release page created with changelog",
+    "onlytools.manifest.json tier field corrected (T-LU-019)",
+    "no private codenames or home paths in shipped files"
+  ],
+  "statusHistory": [
+    {
+      "status": "todo",
+      "ts": "2026-06-23T15:12:03.896Z"
+    }
+  ],
+  "attachments": [],
+  "stage": null,
+  "runStatus": null,
+  "stageHistory": [],
+  "recurring": null,
+  "createdAt": "2026-06-23T15:12:03.895Z",
+  "updatedAt": "2026-06-23T15:12:03.895Z",
+  "proofReferences": [],
+  "proofOverrides": [],
+  "surfaces": [],
+  "parityPair": null,
+  "validationOverrides": null,
+  "executionMode": null,
+  "taskGraph": null,
+  "runtime": null
+}
