@@ -3,19 +3,21 @@
  * Sentinel CLI launcher.
  *
  * Runs the TypeScript source directly via tsx so no build step is required.
- * tsx is bundled in sentinel's own node_modules, so this works regardless
- * of what the parent project has installed.
+ * tsx is a runtime dependency and is resolved through Node's package resolver,
+ * which supports both nested and hoisted npm installs.
  */
 process.title = 'sentinel'
 import { spawn } from 'child_process'
+import { createRequire } from 'module'
 import { fileURLToPath } from 'url'
 import { dirname, join } from 'path'
 
 const __dir = dirname(fileURLToPath(import.meta.url))
-const tsx  = join(__dir, '../node_modules/.bin/tsx')
+const require = createRequire(import.meta.url)
+const tsx = require.resolve('tsx/cli')
 const entry = join(__dir, '../src/cli/index.ts')
 
-const child = spawn(tsx, [entry, ...process.argv.slice(2)], {
+const child = spawn(process.execPath, [tsx, entry, ...process.argv.slice(2)], {
   stdio: 'inherit',
   env: process.env,
 })

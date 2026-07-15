@@ -7,7 +7,7 @@ artifacts/
 
 # git worktrees (parallel agent runs)
 .worktrees/
-apple/
-google/
+/apple/
+/google/
 .keel
 .proofy/

@@ -1259,11 +1259,20 @@ function cmdDesignValidate(): boolean {
 
 const cmd = process.argv[2]
 const writeStatusPath = parseWriteStatus();
+const usage = 'Usage: sentinel schema:validate | schema:generate | contracts | contracts:matrix | mock:generate | mock:validate | catalog:capture [--app-variant <name>] | catalog:validate [--atlas-manifest <file> --session-index <file>] | catalog:index [--atlas-manifest <file> --session-index <file> --output-dir <dir>] | catalog:upload | atlas:import | atlas:export | atlas:migrate | registry:scan | design:validate | quality:check [--file <path>] [--json] [--warn] | doctor [--fix] [--json] [--atlas-manifest <file> --session-index <file> --brandie-root <dir>] | all';
 
 (async () => {
   let report: StatusReport | null = null
 
   switch (cmd) {
+    case '--help':
+    case '-h': console.log(usage); break
+    case '--version':
+    case '-v': {
+      const pkg = JSON.parse(readFileSync(new URL('../../package.json', import.meta.url), 'utf8')) as { version: string }
+      console.log(pkg.version)
+      break
+    }
     case 'schema:validate':  report = cmdValidate(); break
     case 'schema:generate':  await cmdGenerate(); break
     case 'contracts':        report = cmdContracts(); break
@@ -1297,7 +1306,7 @@ const writeStatusPath = parseWriteStatus();
     }
     default:
       console.error(`Unknown command: ${cmd ?? '(none)'}`)
-      console.error('Usage: sentinel schema:validate | schema:generate | contracts | contracts:matrix | mock:generate | mock:validate | catalog:capture [--app-variant <name>] | catalog:validate [--atlas-manifest <file> --session-index <file>] | catalog:index [--atlas-manifest <file> --session-index <file> --output-dir <dir>] | catalog:upload | atlas:import | atlas:export | atlas:migrate | registry:scan | design:validate | quality:check [--file <path>] [--json] [--warn] | doctor [--fix] [--json] [--atlas-manifest <file> --session-index <file> --brandie-root <dir>] | all')
+      console.error(usage)
       process.exit(1)
     }
 
