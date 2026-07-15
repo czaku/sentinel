@@ -3,7 +3,11 @@ import fs from 'fs'
 import os from 'os'
 import path from 'path'
 import type { ResolvedConfig } from '../../config/types.js'
-import { checkMockIntegration, findFixturePathCandidates } from '../../mock/integration.js'
+import {
+  checkMockIntegration,
+  findFixturePathCandidates,
+  pluraliseFixtureDirectory,
+} from '../../mock/integration.js'
 
 function makeConfig(dir: string): ResolvedConfig {
   const sentinelDir = path.join(dir, 'sentinel')
@@ -55,6 +59,12 @@ describe('mock integration', () => {
       '/tmp/demo/sentinel/fixtures/auth/me.json',
       '/tmp/demo/google/app/src/debug/assets/fixtures/auth/me.json',
     ])
+  })
+
+  it('does not double-pluralise fixture directories', () => {
+    expect(pluraliseFixtureDirectory('notification-preferences')).toBe('notification-preferences')
+    expect(pluraliseFixtureDirectory('category')).toBe('categories')
+    expect(pluraliseFixtureDirectory('user')).toBe('users')
   })
 
   it('detects screen-level local stub drift', () => {

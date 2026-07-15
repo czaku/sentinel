@@ -25,7 +25,7 @@ import { checkStaleness } from '../schema/validators/staleness.js'
 import { lintHardcodedTokens } from '../schema/linters/hardcoded-tokens.js'
 import { checkQuality } from '../schema/validators/quality.js'
 import { scanRegistry } from '../catalog/registry.js'
-import { checkMockIntegration, findFixturePathCandidates } from '../mock/integration.js'
+import { checkMockIntegration, findFixturePathCandidates, pluraliseFixtureDirectory } from '../mock/integration.js'
 import { runDoctorCheck } from '../doctor/check.js'
 import { buildFeatureMatrix, printMatrix } from '../contracts/feature-matrix.js'
 import { formatWarningSummary } from './warnings.js'
@@ -318,11 +318,6 @@ function findFixturesForModel(fixturesDir: string, modelId: string): string[] {
   })
 }
 
-function pluralise(id: string): string {
-  if (id.endsWith('y') && !['ay', 'ey', 'oy', 'uy'].some((s) => id.endsWith(s))) return id.slice(0, -1) + 'ies'
-  return id + 's'
-}
-
 function validateMocks(all: ReturnType<typeof loadAll>, warnings: string[], projectRoot: string): void {
   const mockConfig = all.platform.find((s) => s.content['type'] === 'mock-config')?.content
   if (!mockConfig) return
@@ -399,7 +394,7 @@ function genFixtureStubs(all: ReturnType<typeof loadAll>, config: ResolvedConfig
         stub[f.name] = f.isArray ? (val === null ? [] : [val]) : val
       }
 
-      const stubDir  = join(fixturesDir, pluralise(modelId))
+      const stubDir  = join(fixturesDir, pluraliseFixtureDirectory(modelId))
       const stubFile = join(stubDir, `${modelId}.json`)
       mkdirSync(stubDir, { recursive: true })
       writeFileSync(stubFile, JSON.stringify([stub], null, 2) + '\n', 'utf8')

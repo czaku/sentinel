@@ -107,6 +107,14 @@ export function findFixturePathCandidates(
     .filter((candidate, index, all) => all.indexOf(candidate) === index)
 }
 
+export function pluraliseFixtureDirectory(id: string): string {
+  if (id.endsWith('s')) return id
+  if (id.endsWith('y') && !['ay', 'ey', 'oy', 'uy'].some((suffix) => id.endsWith(suffix))) {
+    return id.slice(0, -1) + 'ies'
+  }
+  return id + 's'
+}
+
 export function checkMockIntegration(
   config: ResolvedConfig,
   mockConfig: MockIntegrationConfig,
