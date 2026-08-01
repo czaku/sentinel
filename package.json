@@ -1,6 +1,6 @@
 {
   "name": "@sentinel/cli",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Product integrity guardian \u2014 schema, contracts, chaos, visual, and flow testing across every platform",
   "type": "module",
   "bin": {
